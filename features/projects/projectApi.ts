@@ -33,7 +33,7 @@ export interface Project extends CreateProjectRequest {
   organizationId: string;
   createdBy: string;
   deletedAt: string | null;
-  myRole: ProjectRole;
+  myRole: ProjectRole | null;
   memberCount: number;
   createdAt?: string;
   updatedAt?: string;
@@ -69,7 +69,10 @@ interface ProjectIdentifier {
 }
 
 interface UpdateProjectRequest extends ProjectIdentifier {
-  data: Partial<CreateProjectRequest>;
+  data: Omit<Partial<CreateProjectRequest>, "startDate" | "dueDate"> & {
+    startDate?: string | null;
+    dueDate?: string | null;
+  };
 }
 
 const projectPath = (organizationId: string) =>

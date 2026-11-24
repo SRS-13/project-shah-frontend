@@ -18,7 +18,7 @@ interface Props {
   onSettings: () => void;
 }
 
-export function formatProjectLabel(value?: string) {
+export function formatProjectLabel(value?: string | null) {
   if (!value) return "Not set";
 
   return value

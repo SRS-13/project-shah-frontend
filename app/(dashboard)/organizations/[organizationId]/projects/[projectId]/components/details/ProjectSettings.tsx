@@ -101,7 +101,7 @@ function ProjectSettingsForm({
   const canEdit = canManage && !archived;
 
   const inputClass =
-    "h-12 rounded-xl border-[#DED9E8] shadow-none focus-visible:ring-[#9160EF]/20";
+    "h-12 rounded-xl border-[#DED9E8] bg-white text-[#17152B] placeholder:text-[#827B94] shadow-none focus-visible:border-[#9160EF] focus-visible:ring-[#9160EF]/20 dark:bg-white";
 
   function updateField<K extends keyof typeof form>(
     key: K,
@@ -199,7 +199,7 @@ function ProjectSettingsForm({
   }
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-4xl space-y-6 text-[#17152B] scheme-light">
       <section className="rounded-2xl border border-[#EAE5F1] bg-white p-6">
         <h2 className="text-xl font-semibold text-[#17152B]">
           General settings
@@ -243,7 +243,7 @@ function ProjectSettingsForm({
                 id="project-key"
                 value={project.key}
                 readOnly
-                className={`${inputClass} bg-[#FAF9FD]`}
+                className={`${inputClass} bg-[#FAF9FD] dark:bg-[#FAF9FD]`}
               />
 
               <p className="text-xs text-[#827B94]">
@@ -266,7 +266,7 @@ function ProjectSettingsForm({
                     event.target.value,
                   )
                 }
-                className="rounded-xl border-[#DED9E8] shadow-none"
+                className="rounded-xl border-[#DED9E8] bg-white text-[#17152B] placeholder:text-[#827B94] shadow-none focus-visible:border-[#9160EF] focus-visible:ring-[#9160EF]/20 dark:bg-white"
               />
             </div>
 
@@ -285,7 +285,7 @@ function ProjectSettingsForm({
                   }
                   className={`w-full border bg-white px-3 ${inputClass}`}
                 >
-                  <option value="planned">Planned</option>
+                  <option value="planning">Planning</option>
                   <option value="in_progress">In progress</option>
                   <option value="completed">Completed</option>
                 </select>
@@ -418,8 +418,7 @@ function ProjectSettingsForm({
             </div>
 
             <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
+              <AlertDialogTrigger render={<Button
                   type="button"
                   variant="outline"
                   disabled={busy}
@@ -428,7 +427,7 @@ function ProjectSettingsForm({
                       ? "border-[#D9C7F8] text-[#9160EF]"
                       : "border-red-200 text-red-600 hover:bg-red-50"
                   }
-                >
+                />}>
                   {busy ? (
                     <Loader2
                       size={16}
@@ -441,10 +440,9 @@ function ProjectSettingsForm({
                   )}
 
                   {archived ? "Restore" : "Archive"}
-                </Button>
               </AlertDialogTrigger>
 
-              <AlertDialogContent className="rounded-2xl">
+              <AlertDialogContent className="rounded-2xl bg-white text-[#17152B] scheme-light">
                 <AlertDialogHeader>
                   <AlertDialogTitle>
                     {archived
@@ -473,8 +471,8 @@ function ProjectSettingsForm({
                     }
                     className={
                       archived
-                        ? "bg-[#9160EF] hover:bg-[#8754E8]"
-                        : "bg-red-600 hover:bg-red-700"
+                        ? "bg-[#9160EF] text-white hover:bg-[#8754E8]"
+                        : "bg-red-600 text-white hover:bg-red-700"
                     }
                   >
                     {archived

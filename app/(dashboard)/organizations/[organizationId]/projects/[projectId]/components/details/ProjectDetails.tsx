@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -15,22 +14,32 @@ import { Button } from "@/components/ui/button";
 
 import { ProjectOverview } from "./ProjectOverview";
 
-import { useGetProjectQuery, useGetProjectsQuery } from "@/features/projects/projectApi";
+import { useGetProjectQuery } from "@/features/projects/projectApi";
+import { useGetMeQuery } from "@/features/auth/authQuery";
+import { useGetOrganizationMembersQuery } from "@/features/organizations/organizationApi";
 import { ProjectHeader } from "./ProjectHeader";
 import { ProjectNavigation, ProjectTab } from "./ProjectNavigation";
 import { ProjectSettings } from "./ProjectSettings";
+import { ProjectMembers } from "../members/ProjectMembers";
 
 interface Props {
   organizationId: string;
   projectId: string;
 }
 
-export function ProjectDetails({
-  organizationId,
-  projectId,
-}: Props) {
-  const [activeTab, setActiveTab] =
-    useState<ProjectTab>("overview");
+export function ProjectDetails({ organizationId, projectId }: Props) {
+  const [activeTab, setActiveTab] = useState<ProjectTab>("overview");
+  const { data: currentUser } = useGetMeQuery();
+  const currentUserId = currentUser?.id;
+  const { currentData: organizationMembers } = useGetOrganizationMembersQuery(
+    organizationId,
+    { skip: !currentUserId },
+  );
+  const organizationRole = organizationMembers?.find(
+    (member) => member.user.id === currentUserId,
+  )?.role;
+  const isOrganizationAdmin =
+    organizationRole === "OWNER" || organizationRole === "ADMIN";
 
   const {
     data: project,
@@ -43,8 +52,7 @@ export function ProjectDetails({
     projectId,
   });
 
-  const projectsPath =
-    `/organizations/${encodeURIComponent(organizationId)}/projects`;
+  const projectsPath = `/organizations/${encodeURIComponent(organizationId)}/projects`;
 
   if (isLoading) {
     return <ProjectDetailsSkeleton />;
@@ -62,8 +70,8 @@ export function ProjectDetails({
         </h2>
 
         <p className="mt-2 max-w-sm text-sm text-[#77718E]">
-          This project may not exist, or you may not have
-          permission to access it.
+          This project may not exist, or you may not have permission to access
+          it.
         </p>
 
         <div className="mt-6 flex gap-3">
@@ -79,10 +87,7 @@ export function ProjectDetails({
             disabled={isFetching}
             className="bg-[#9160EF] text-white hover:bg-[#8754E8]"
           >
-            <RefreshCw
-              size={16}
-              className={isFetching ? "animate-spin" : ""}
-            />
+            <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
             Retry
           </Button>
         </div>
@@ -113,9 +118,7 @@ export function ProjectDetails({
 
           <ChevronRight size={14} className="text-[#AAA5B7]" />
 
-          <span className="font-medium text-[#17152B]">
-            {project.name}
-          </span>
+          <span className="font-medium text-[#17152B]">{project.name}</span>
 
           {isFetching && (
             <Loader2
@@ -130,20 +133,12 @@ export function ProjectDetails({
           onSettings={() => setActiveTab("settings")}
         />
 
-        <ProjectNavigation
-          activeTab={activeTab}
-          onChange={setActiveTab}
-        />
+        <ProjectNavigation activeTab={activeTab} onChange={setActiveTab} />
 
-        {activeTab === "overview" && (
-          <ProjectOverview project={project} />
-        )}
+        {activeTab === "overview" && <ProjectOverview project={project} />}
 
         {activeTab === "settings" && (
-          <ProjectSettings
-            project={project}
-            organizationId={organizationId}
-          />
+          <ProjectSettings project={project} organizationId={organizationId} />
         )}
 
         {activeTab === "board" && (
@@ -161,9 +156,15 @@ export function ProjectDetails({
         )}
 
         {activeTab === "members" && (
-          <ModulePlaceholder
-            title="Project members"
-            description={`${project.memberCount} member(s) in this project. Connect the project members API to manage your team.`}
+          <ProjectMembers
+            key={`${organizationId}-${projectId}`}
+            organizationId={organizationId}
+            projectId={projectId}
+            permissions={{
+              canManage: isOrganizationAdmin || project.myRole === "manager",
+              isAdmin: isOrganizationAdmin,
+            }}
+            currentUserId={currentUserId}
           />
         )}
 
@@ -191,9 +192,7 @@ function ModulePlaceholder({
         <AlertCircle size={26} />
       </div>
 
-      <h2 className="text-lg font-semibold text-[#17152B]">
-        {title}
-      </h2>
+      <h2 className="text-lg font-semibold text-[#17152B]">{title}</h2>
 
       <p className="mt-2 max-w-md text-sm leading-6 text-[#77718E]">
         {description}
@@ -211,10 +210,7 @@ function ProjectDetailsSkeleton() {
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div
-            key={index}
-            className="h-32 rounded-2xl bg-white"
-          />
+          <div key={index} className="h-32 rounded-2xl bg-white" />
         ))}
       </div>
 

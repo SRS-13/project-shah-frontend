@@ -104,7 +104,8 @@ export const baseApi = createApi({
     "Task",
     "Organization",
     "OrganizationMember",
-    "OrganizationInvitation"
+    "OrganizationInvitation",
+    "ProjectMember"
   ],
 
   endpoints: () => ({}),
