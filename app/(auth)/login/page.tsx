@@ -26,6 +26,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useLoginMutation } from "@/features/auth/authQuery";
+import { useAppDispatch } from "@/lib/store/store";
+import { baseApi } from "@/lib/store/services/api";
 import TeamFlowLogo from "../components/TeamFlowLogo";
 import DashboardPreview from "../components/DashboardPreview";
 
@@ -81,6 +83,7 @@ function LoginIllustration() {
 
 export default function LoginPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -106,9 +109,9 @@ export default function LoginPage() {
     try {
       await login(values).unwrap();
 
-      // Requires a valid server-side session established by the API.
+      // Discard cached profile errors and data from the previous session.
+      dispatch(baseApi.util.resetApiState());
       router.replace("/dashboard");
-      router.refresh();
     } catch (error: unknown) {
       const apiError = error as { status?: number };
 

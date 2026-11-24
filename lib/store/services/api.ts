@@ -6,10 +6,35 @@ import {
   type FetchArgs,
   type FetchBaseQueryError,
 } from "@reduxjs/toolkit/query/react";
+import { readTokens, saveTokens, clearTokens, isAuthTokens } from "@/features/auth/tokenStorage";
 
-const rawBaseQuery = fetchBaseQuery({
+const fetchQuery = fetchBaseQuery({
   baseUrl: "http://localhost:4000/api/v1/",
+  prepareHeaders: (headers) => {
+    const tokens = readTokens();
+    if (tokens) headers.set("Authorization", `Bearer ${tokens.accessToken}`);
+    return headers;
+  },
 });
+
+// Nest's global ResponseInterceptor wraps successful responses.
+const rawBaseQuery: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+  const result = await fetchQuery(args, api, extraOptions);
+  const body = result.data;
+  if (
+    body !== null && typeof body === "object" &&
+    "success" in body && body.success === true && "data" in body
+  ) {
+    return { ...result, data: body.data };
+  }
+  return result;
+};
+
+let refreshInFlight: Promise<boolean> | null = null;
 
 const baseQueryWithReauth: BaseQueryFn<
   string | FetchArgs,
@@ -29,21 +54,34 @@ const baseQueryWithReauth: BaseQueryFn<
 
   // Attempt refresh when an access token expires.
   if (result.error?.status === 401 && !isAuthRequest) {
-    const refreshResult = await rawBaseQuery(
-      {
-        url: "/auth/refresh",
-        method: "POST",
-      },
-      api,
-      extraOptions
-    );
+    if (!refreshInFlight) {
+      refreshInFlight = (async () => {
+        const tokens = readTokens();
+        if (!tokens) return false;
+        const refreshResult = await rawBaseQuery(
+          {
+            url: "/auth/refresh",
+            method: "POST",
+            body: { refreshToken: tokens.refreshToken },
+          },
+          api,
+          extraOptions
+        );
+        if (isAuthTokens(refreshResult.data)) {
+          saveTokens(refreshResult.data);
+          return true;
+        }
+        return false;
+      })().finally(() => {
+        refreshInFlight = null;
+      });
+    }
 
-    if (refreshResult.data) {
+    if (await refreshInFlight) {
       // Retry original request after session refresh.
       result = await rawBaseQuery(args, api, extraOptions);
     } else {
-      // The server should clear expired auth cookies.
-      // Do not delete unrelated browser cookies.
+      clearTokens();
       api.dispatch({ type: "auth/clearAuth" });
     }
   }
@@ -64,6 +102,9 @@ export const baseApi = createApi({
     "Workspace",
     "Project",
     "Task",
+    "Organization",
+    "OrganizationMember",
+    "OrganizationInvitation"
   ],
 
   endpoints: () => ({}),

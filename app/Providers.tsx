@@ -2,7 +2,8 @@
 
 import { Provider } from "react-redux";
 import { store } from "@/lib/store/store";
-import { useState } from "react";
+import { Suspense } from "react";
+import { AuthGuard } from "@/features/auth/AuthGuard";
 
 export function Providers({
   children,
@@ -11,5 +12,11 @@ export function Providers({
   children: React.ReactNode;
   lang: any;
 }) {
-  return <Provider store={store}>{children}</Provider>;
+  return (
+    <Provider store={store}>
+      <Suspense fallback={<div role="status">Loading…</div>}>
+        <AuthGuard>{children}</AuthGuard>
+      </Suspense>
+    </Provider>
+  );
 }
